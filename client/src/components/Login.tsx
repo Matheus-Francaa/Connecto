@@ -71,56 +71,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onGuestContinue }) => {
         window.location.href = `${API_URL}/auth/google`;
     };
 
-    const handleDemoLogin = async () => {
-        setError('');
-        setLoading(true);
-
-        try {
-            // Try to login with demo user
-            let response = await fetch(`${API_URL}/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email: 'demo@connecto.com', password: 'demo123' }),
-            });
-
-            // If demo user doesn't exist, create it
-            if (!response.ok) {
-                response = await fetch(`${API_URL}/auth/register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        email: 'demo@connecto.com',
-                        password: 'demo123',
-                        name: 'Usuário Demo'
-                    }),
-                });
-            }
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'Erro ao fazer login demo');
-            }
-
-            // Save token
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-
-            // Authenticate socket
-            socket?.emit('auth:authenticate', { token: data.token });
-
-            onLoginSuccess(data.user);
-        } catch (err: any) {
-            setError(err.message || 'Erro ao fazer login demo');
-        } finally {
-            setLoading(false);
-        }
-    };
-
     return (
         <div className="login-overlay">
             <div className="login-container">
@@ -231,10 +181,6 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onGuestContinue }) => {
                                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                             </svg>
                             Continuar com Google
-                        </button>
-
-                        <button className="demo-button" onClick={handleDemoLogin} disabled={loading}>
-                            🚀 Acesso Demo Rápido
                         </button>
                     </div>
 
