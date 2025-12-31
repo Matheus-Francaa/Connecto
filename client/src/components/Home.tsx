@@ -4,20 +4,29 @@ import ModeSelector from './ModeSelector';
 import InterestsSelector from './InterestsSelector';
 import MatchesList from './MatchesList';
 import MatchChat from './MatchChat';
+import Settings from './Settings';
 import { ChatMode, UserPreferences, Match } from '../types';
 import './Home.css';
 
-const Home: React.FC = () => {
+interface HomeProps {
+    user: { id: string; email: string; name: string } | null;
+    isGuest: boolean;
+    onLogout: () => void;
+    onUpdateUser: (user: any) => void;
+}
+
+const Home: React.FC<HomeProps> = ({ user, isGuest, onLogout, onUpdateUser }) => {
     const { startConnection, onlineUsers, setUserPreferences, socket } = useWebRTC();
     const [step, setStep] = useState<'mode' | 'interests' | 'home'>('home');
     const [selectedMode, setSelectedMode] = useState<ChatMode | null>(null);
     const [showMatches, setShowMatches] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
     const [matches, setMatches] = useState<Match[]>([]);
+    const [showSettings, setShowSettings] = useState(false);
 
-    // Listen for matches events
+    // Listen for matches events (only for authenticated users)
     React.useEffect(() => {
-        if (socket) {
+        if (socket && user) {
             // Load matches when socket connects
             socket.emit('matches:get', (userMatches: Match[]) => {
                 setMatches(userMatches);
@@ -121,7 +130,7 @@ const Home: React.FC = () => {
                 <button className="back-to-home-button" onClick={handleBackToHome}>
                     ← Voltar
                 </button>
-                <ModeSelector onModeSelect={handleModeSelect} />
+                <ModeSelector onModeSelect={handleModeSelect} isGuest={isGuest} />
             </div>
         );
     }
@@ -141,12 +150,46 @@ const Home: React.FC = () => {
 
     return (
         <div className="home-container">
-            <button className="matches-button" onClick={handleOpenMatches}>
-                💕 Matches
-                {totalUnread > 0 && (
-                    <span className="matches-badge">{totalUnread > 99 ? '99+' : totalUnread}</span>
-                )}
-            </button>
+            {/* User info and settings/logout buttons */}
+            {user && (
+                <div className="user-info">
+                    <span className="user-name">👋 {user.name}</span>
+                    <div className="user-actions">
+                        <button className="settings-button" onClick={() => setShowSettings(true)}>
+                            ⚙️
+                        </button>
+                        <button className="logout-button" onClick={onLogout}>
+                            Sair
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {isGuest && (
+                <div className="guest-badge">
+                    Modo Visitante
+                </div>
+            )}
+
+            {/* Matches button (only for authenticated users) */}
+            {user && !isGuest && (
+                <button className="matches-button" onClick={handleOpenMatches}>
+                    💕 Matches
+                    {totalUnread > 0 && (
+                        <span className="matches-badge">{totalUnread > 99 ? '99+' : totalUnread}</span>
+                    )}
+                </button>
+            )}
+
+            {/* Settings modal */}
+            {showSettings && user && (
+                <Settings
+                    user={user}
+                    onClose={() => setShowSettings(false)}
+                    onLogout={onLogout}
+                    onUpdateUser={onUpdateUser}
+                />
+            )}
 
             <div className="home-content">
                 <div className="logo-section">

@@ -2,11 +2,15 @@ import express from 'express';
 const app = express();
 import cors from 'cors';
 import { Server } from 'socket.io';
+import passport from 'passport';
+import session from 'express-session';
 import { config } from './config/env';
 import { logger } from './utils/logger';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { handelStart, handelDisconnect, getType } from './lib';
 import { GetTypesResult, room } from './types';
+import authRoutes from './routes/auth';
+import { verifyToken } from './services/authService';
 
 // Middleware
 app.use(cors({
@@ -14,6 +18,22 @@ app.use(cors({
   credentials: true
 }));
 app.use(express.json());
+
+// Session configuration
+app.use(
+  session({
+    secret: config.jwtSecret,
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+// Passport initialization
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Auth routes
+app.use('/auth', authRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -47,11 +67,31 @@ let online: number = 0;
 let roomArr: Array<room> = [];
 let matches: Map<string, any> = new Map(); // matchId -> Match data
 let pendingLikes: Map<string, Set<string>> = new Map(); // userId -> Set of userIds who liked them
+let authenticatedUsers: Map<string, any> = new Map(); // socketId -> user data
 
 io.on('connection', (socket) => {
   online++;
   io.emit('online', online);
   logger.info(`✅ User connected: ${socket.id} | Total online: ${online}`);
+
+  // Authentication
+  socket.on('auth:authenticate', (data) => {
+    try {
+      const { token } = data;
+      const user = verifyToken(token);
+
+      if (user) {
+        authenticatedUsers.set(socket.id, user);
+        socket.emit('auth:success', { user });
+        logger.info(`🔐 User authenticated: ${user.email} (${socket.id})`);
+      } else {
+        socket.emit('auth:error', { message: 'Token inválido' });
+      }
+    } catch (error) {
+      logger.error('Authentication error:', error);
+      socket.emit('auth:error', { message: 'Erro na autenticação' });
+    }
+  });
 
   // on start
   socket.on('start', (preferences, cb) => {

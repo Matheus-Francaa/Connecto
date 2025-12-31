@@ -1,0 +1,52 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        working-directory: ./server
+        run: npm install
+        
+      - name: Build
+        working-directory: ./server
+        run: npm run build
+        
+      - name: Deploy to Render
+        run: echo "Deploy será feito automaticamente pelo Render"
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        working-directory: ./client
+        run: npm install
+        
+      - name: Build
+        working-directory: ./client
+        run: npm run build
+        
+      - name: Deploy to Vercel
+        run: echo "Deploy será feito automaticamente pelo Vercel"

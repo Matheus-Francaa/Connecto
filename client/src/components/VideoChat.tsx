@@ -10,7 +10,6 @@ const VideoChat: React.FC = () => {
         mediaState,
         myVideoRef,
         strangerVideoRef,
-        skipConnection,
         cancelSearch,
         userPreferences,
         connectionDuration

@@ -4,9 +4,18 @@ import './ModeSelector.css';
 
 interface ModeSelectorProps {
     onModeSelect: (mode: ChatMode) => void;
+    isGuest?: boolean;
 }
 
-const ModeSelector: React.FC<ModeSelectorProps> = ({ onModeSelect }) => {
+const ModeSelector: React.FC<ModeSelectorProps> = ({ onModeSelect, isGuest = false }) => {
+    const handleConnectionsClick = () => {
+        if (isGuest) {
+            alert('⚠️ O modo "Conexões Reais" requer cadastro para salvar seus matches.\n\nPor favor, faça login para usar este recurso!');
+            return;
+        }
+        onModeSelect('connections');
+    };
+
     return (
         <div className="mode-selector">
             <h2 className="mode-title">Como você quer se conectar hoje?</h2>
@@ -28,7 +37,11 @@ const ModeSelector: React.FC<ModeSelectorProps> = ({ onModeSelect }) => {
                     <button className="mode-button">Começar a Conversar</button>
                 </div>
 
-                <div className="mode-card connections" onClick={() => onModeSelect('connections')}>
+                <div
+                    className={`mode-card connections ${isGuest ? 'disabled' : ''}`}
+                    onClick={handleConnectionsClick}
+                >
+                    {isGuest && <div className="disabled-badge">🔒 Requer Login</div>}
                     <div className="mode-icon">💝</div>
                     <h3>Conexões Reais</h3>
                     <p className="mode-description">
